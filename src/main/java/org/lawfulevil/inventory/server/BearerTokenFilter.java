@@ -19,9 +19,10 @@ package org.lawfulevil.inventory.server;
 
 import java.io.IOException;
 
-import org.eclipse.microprofile.config.inject.ConfigProperty;
+import org.lawfulevil.inventory.api.TokenService;
 
 import io.vertx.core.json.JsonObject;
+import jakarta.inject.Inject;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ContainerRequestFilter;
 import jakarta.ws.rs.core.HttpHeaders;
@@ -30,22 +31,26 @@ import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.ext.Provider;
 
 /**
- * Guards every REST resource with a static bearer token. Milestone-1 stopgap:
- * the token comes from configuration; the {@code TokenService}-backed
- * per-user tokens replace this in the webapp phase.
+ * Guards every REST resource with a bearer token validated against the
+ * {@link TokenService}. The login endpoint is the sole exemption.
  */
 @Provider
 public class BearerTokenFilter implements ContainerRequestFilter {
 
-  @ConfigProperty(name = "inventory.api.token")
-  String apiToken;
+  @Inject
+  TokenService tokens;
 
   @Override
   public void filter(ContainerRequestContext requestContext) throws IOException {
+    String path = requestContext.getUriInfo().getPath();
+    if (path.endsWith("/auth/login"))
+      return;
     String header = requestContext.getHeaderString(HttpHeaders.AUTHORIZATION);
-    if (header == null || !header.equals("Bearer " + this.apiToken))
-      requestContext.abortWith(Response.status(Response.Status.UNAUTHORIZED)
-          .type(MediaType.APPLICATION_JSON)
+    String token = header != null && header.startsWith("Bearer ") ? header.substring(7) : null;
+    // ContainerRequestFilter is synchronous; token lookups are memory- or
+    // single-row-fast, so blocking here is acceptable for now
+    if (token == null || this.tokens.authenticate(token).toCompletableFuture().join().isEmpty())
+      requestContext.abortWith(Response.status(Response.Status.UNAUTHORIZED).type(MediaType.APPLICATION_JSON)
           .entity(new JsonObject().put("error", "missing or invalid bearer token").encode()).build());
   }
 }

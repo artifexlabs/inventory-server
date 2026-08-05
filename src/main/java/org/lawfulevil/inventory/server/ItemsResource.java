@@ -97,6 +97,37 @@ public class ItemsResource {
         ok -> ok ? Response.noContent().build() : Response.status(Response.Status.NOT_FOUND).build());
   }
 
+  @GET
+  @Path("/{id}/containers")
+  public CompletionStage<String> getContainers(@PathParam("id") String id) {
+    return this.inventory.getContainersOf(id).thenApply(ItemsResource::toJsonArray);
+  }
+
+  @PUT
+  @Path("/{containerId}/contained/{itemId}")
+  public CompletionStage<Response> addToContainer(@PathParam("containerId") String containerId,
+      @PathParam("itemId") String itemId) {
+    return this.inventory.addToContainer(containerId, itemId).thenApply(ItemsResource::noContentOr404);
+  }
+
+  @DELETE
+  @Path("/{containerId}/contained/{itemId}")
+  public CompletionStage<Response> removeFromContainer(@PathParam("containerId") String containerId,
+      @PathParam("itemId") String itemId) {
+    return this.inventory.removeFromContainer(containerId, itemId).thenApply(ItemsResource::noContentOr404);
+  }
+
+  @POST
+  @Path("/{itemId}/move-to/{containerId}")
+  public CompletionStage<Response> moveToContainer(@PathParam("itemId") String itemId,
+      @PathParam("containerId") String containerId) {
+    return this.inventory.moveToContainer(itemId, containerId).thenApply(ItemsResource::noContentOr404);
+  }
+
+  private static Response noContentOr404(boolean ok) {
+    return ok ? Response.noContent().build() : Response.status(Response.Status.NOT_FOUND).build();
+  }
+
   private static String toJsonArray(List<Item> items) {
     return new JsonArray(items.stream().map(i -> ItemFactory.serialize(i)).toList()).encode();
   }
