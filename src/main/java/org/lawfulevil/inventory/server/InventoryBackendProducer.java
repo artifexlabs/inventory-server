@@ -111,6 +111,24 @@ public class InventoryBackendProducer {
 
   @Produces
   @Singleton
+  public org.lawfulevil.inventory.api.LocationSystem locationSystem(InventorySystem items) {
+    return switch (this.storage) {
+    case "pg" -> new org.lawfulevil.inventory.impl.PgLocationSystem(this.pools.get(), this.principal);
+    default -> new org.lawfulevil.inventory.impl.InMemoryLocationSystem(items, this.memoryAudit, this.principal);
+    };
+  }
+
+  @Produces
+  @Singleton
+  public org.lawfulevil.inventory.api.AssetStore assetStore(InventorySystem items) {
+    return switch (this.storage) {
+    case "pg" -> new org.lawfulevil.inventory.impl.PgAssetStore(this.pools.get(), this.principal);
+    default -> new org.lawfulevil.inventory.impl.InMemoryAssetStore(items, this.memoryAudit, this.principal);
+    };
+  }
+
+  @Produces
+  @Singleton
   public UserStore userStore() {
     return switch (this.storage) {
     case "pg" -> new PgUserStore(this.pools.get());

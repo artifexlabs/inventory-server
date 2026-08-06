@@ -128,6 +128,30 @@ public class ItemsResource {
     return ok ? Response.noContent().build() : Response.status(Response.Status.NOT_FOUND).build();
   }
 
+  @jakarta.inject.Inject
+  org.lawfulevil.inventory.api.AssetStore assets;
+
+  @POST
+  @Path("/{itemId}/assets")
+  @Consumes(MediaType.WILDCARD)
+  public CompletionStage<Response> uploadAsset(@PathParam("itemId") String itemId,
+      @jakarta.ws.rs.HeaderParam(AssetsResource.FILENAME_HEADER) String filename,
+      @jakarta.ws.rs.HeaderParam("Content-Type") String contentType, byte[] body) {
+    String name = filename == null || filename.isBlank() ? "unnamed" : filename;
+    String type = contentType == null || contentType.isBlank() ? MediaType.APPLICATION_OCTET_STREAM : contentType;
+    return this.assets.store(itemId, name, type, body == null ? new byte[0] : body)
+        .thenApply(o -> o
+            .map(info -> Response.status(Response.Status.CREATED).entity(info.toJson().encode()).build())
+            .orElseGet(() -> Response.status(Response.Status.NOT_FOUND).build()));
+  }
+
+  @GET
+  @Path("/{itemId}/assets")
+  public CompletionStage<String> listAssets(@PathParam("itemId") String itemId) {
+    return this.assets.listFor(itemId)
+        .thenApply(list -> new JsonArray(list.stream().map(i -> i.toJson()).toList()).encode());
+  }
+
   private static String toJsonArray(List<Item> items) {
     return new JsonArray(items.stream().map(i -> ItemFactory.serialize(i)).toList()).encode();
   }
