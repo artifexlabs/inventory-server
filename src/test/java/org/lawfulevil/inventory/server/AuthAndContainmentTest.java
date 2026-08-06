@@ -62,6 +62,13 @@ public class AuthAndContainmentTest {
   }
 
   @Test
+  public void testMeReflectsCurrentUser() {
+    withToken("dev-token").get("/api/v1/auth/me").then().statusCode(200)
+        .body("email", equalTo("admin@example.com")).body("admin", is(true));
+    given().get("/api/v1/auth/me").then().statusCode(401);
+  }
+
+  @Test
   public void testLogoutRevokesToken() {
     String token = new JsonObject(given().contentType(ContentType.JSON)
         .body(new JsonObject().put("email", "admin@example.com").put("password", "change-me").encode())
