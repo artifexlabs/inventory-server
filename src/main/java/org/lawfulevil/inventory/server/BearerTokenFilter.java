@@ -46,7 +46,7 @@ public class BearerTokenFilter implements ContainerRequestFilter {
   @Override
   public void filter(ContainerRequestContext requestContext) throws IOException {
     String path = requestContext.getUriInfo().getPath();
-    if (path.endsWith("/auth/login"))
+    if (path.endsWith("/auth/login") || path.endsWith("/auth/exchange"))
       return;
     String header = requestContext.getHeaderString(HttpHeaders.AUTHORIZATION);
     String token = header != null && header.startsWith("Bearer ") ? header.substring(7) : null;
