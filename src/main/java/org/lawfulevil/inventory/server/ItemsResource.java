@@ -152,6 +152,49 @@ public class ItemsResource {
         .thenApply(list -> new JsonArray(list.stream().map(i -> i.toJson()).toList()).encode());
   }
 
+  @org.eclipse.microprofile.config.inject.ConfigProperty(name = "inventory.qr.base-url",
+      defaultValue = "http://localhost:8081")
+  String qrBaseUrl;
+
+  @jakarta.inject.Inject
+  org.lawfulevil.inventory.api.LabelPrinter labelPrinter;
+
+  @jakarta.inject.Inject
+  org.lawfulevil.inventory.api.AuditSink auditSink;
+
+  @jakarta.inject.Inject
+  CurrentUser currentUser;
+
+  private String scanUrl(String id) {
+    return this.qrBaseUrl + "/i/" + id;
+  }
+
+  @GET
+  @Path("/{id}/qr.png")
+  @Produces("image/png")
+  public CompletionStage<Response> qr(@PathParam("id") String id) {
+    return this.inventory.getItem(id)
+        .thenApply(o -> o.map(i -> Response.ok(QrCodes.png(scanUrl(id), 300), "image/png").build())
+            .orElseGet(() -> Response.status(Response.Status.NOT_FOUND).build()));
+  }
+
+  @POST
+  @Path("/{id}/print-label")
+  @Consumes(MediaType.WILDCARD)
+  public CompletionStage<Response> printLabel(@PathParam("id") String id) {
+    return this.inventory.getItem(id).thenCompose(o -> o
+        .map(item -> this.labelPrinter.printLabel(item, QrCodes.png(scanUrl(id), 300))
+            .thenCompose(ok -> this.auditSink
+                .record(new org.lawfulevil.inventory.api.DefaultAuditEvent(
+                    org.lawfulevil.inventory.impl.Ulid.next(), java.time.Instant.now(),
+                    this.currentUser.principal(), "label.print", id,
+                    new JsonObject().put("printed", ok)))
+                .thenApply(v -> ok ? Response.noContent().build()
+                    : Response.status(Response.Status.SERVICE_UNAVAILABLE).build())))
+        .orElseGet(() -> java.util.concurrent.CompletableFuture
+            .completedStage(Response.status(Response.Status.NOT_FOUND).build())));
+  }
+
   private static String toJsonArray(List<Item> items) {
     return new JsonArray(items.stream().map(i -> ItemFactory.serialize(i)).toList()).encode();
   }

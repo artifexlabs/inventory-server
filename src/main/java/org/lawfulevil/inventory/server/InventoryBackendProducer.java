@@ -120,6 +120,12 @@ public class InventoryBackendProducer {
 
   @Produces
   @Singleton
+  public org.lawfulevil.inventory.api.LabelPrinter labelPrinter() {
+    return new org.lawfulevil.inventory.impl.LoggingLabelPrinter();
+  }
+
+  @Produces
+  @Singleton
   public org.lawfulevil.inventory.api.AssetStore assetStore(InventorySystem items) {
     return switch (this.storage) {
     case "pg" -> new org.lawfulevil.inventory.impl.PgAssetStore(this.pools.get(), this.principal);
