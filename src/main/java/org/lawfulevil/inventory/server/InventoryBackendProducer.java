@@ -18,10 +18,13 @@
 package org.lawfulevil.inventory.server;
 
 import org.eclipse.microprofile.config.inject.ConfigProperty;
+import org.lawfulevil.inventory.api.AuditReader;
+import org.lawfulevil.inventory.api.AuditSink;
 import org.lawfulevil.inventory.api.InventorySystem;
 import org.lawfulevil.inventory.api.InventoryUser;
 import org.lawfulevil.inventory.api.TokenService;
 import org.lawfulevil.inventory.impl.InMemoryAuditSink;
+import org.lawfulevil.inventory.impl.PgAudit;
 import org.lawfulevil.inventory.impl.InMemoryInventorySystem;
 import org.lawfulevil.inventory.impl.InMemoryTokenService;
 import org.lawfulevil.inventory.impl.InMemoryUserStore;
@@ -70,12 +73,39 @@ public class InventoryBackendProducer {
   @Inject
   Instance<Pool> pools;
 
+  private final InMemoryAuditSink memoryAudit = new InMemoryAuditSink();
+  private volatile PgAudit pgAudit;
+
+  private PgAudit pgAudit() {
+    if (this.pgAudit == null)
+      this.pgAudit = new PgAudit(this.pools.get());
+    return this.pgAudit;
+  }
+
   @Produces
   @Singleton
   public InventorySystem inventorySystem() {
     return switch (this.storage) {
     case "pg" -> new PgInventorySystem(this.pools.get(), this.principal);
-    default -> new InMemoryInventorySystem(new InMemoryAuditSink(), this.principal);
+    default -> new InMemoryInventorySystem(this.memoryAudit, this.principal);
+    };
+  }
+
+  @Produces
+  @Singleton
+  public AuditSink auditSink() {
+    return switch (this.storage) {
+    case "pg" -> pgAudit();
+    default -> this.memoryAudit;
+    };
+  }
+
+  @Produces
+  @Singleton
+  public AuditReader auditReader() {
+    return switch (this.storage) {
+    case "pg" -> pgAudit();
+    default -> this.memoryAudit;
     };
   }
 

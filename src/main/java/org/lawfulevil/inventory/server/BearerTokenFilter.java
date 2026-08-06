@@ -40,6 +40,9 @@ public class BearerTokenFilter implements ContainerRequestFilter {
   @Inject
   TokenService tokens;
 
+  @Inject
+  CurrentUser currentUser;
+
   @Override
   public void filter(ContainerRequestContext requestContext) throws IOException {
     String path = requestContext.getUriInfo().getPath();
@@ -49,8 +52,12 @@ public class BearerTokenFilter implements ContainerRequestFilter {
     String token = header != null && header.startsWith("Bearer ") ? header.substring(7) : null;
     // ContainerRequestFilter is synchronous; token lookups are memory- or
     // single-row-fast, so blocking here is acceptable for now
-    if (token == null || this.tokens.authenticate(token).toCompletableFuture().join().isEmpty())
+    var user = token == null ? java.util.Optional.<org.lawfulevil.inventory.api.InventoryUser>empty()
+        : this.tokens.authenticate(token).toCompletableFuture().join();
+    if (user.isEmpty())
       requestContext.abortWith(Response.status(Response.Status.UNAUTHORIZED).type(MediaType.APPLICATION_JSON)
           .entity(new JsonObject().put("error", "missing or invalid bearer token").encode()).build());
+    else
+      this.currentUser.set(user.get());
   }
 }
