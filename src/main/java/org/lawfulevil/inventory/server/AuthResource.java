@@ -67,6 +67,18 @@ public class AuthResource {
             .orElseGet(() -> CompletableFuture.completedStage(badCredentials())));
   }
 
+  @Inject
+  CurrentUser current;
+
+  /** Who does the presented token belong to, right now. */
+  @jakarta.ws.rs.GET
+  @Path("/me")
+  public Response me() {
+    return this.current.get()
+        .map(u -> Response.ok(UserFactory.serialize(u).encode()).build())
+        .orElseGet(() -> Response.status(Response.Status.UNAUTHORIZED).build());
+  }
+
   @POST
   @Path("/logout")
   public CompletionStage<Response> logout(@HeaderParam(HttpHeaders.AUTHORIZATION) String authorization) {
