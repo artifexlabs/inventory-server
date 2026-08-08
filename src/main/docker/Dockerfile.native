@@ -1,0 +1,22 @@
+# Native image for inventory-server. Fonts + fontconfig are REQUIRED: label
+# composition renders text via AWT/Java2D (quarkus-awt), which needs a real
+# fontconfig setup and at least one font family in the image.
+#
+# Build the runner first (from the workspace root, macOS included):
+#   mvn -pl inventory-server -am package -DskipTests -Dnative -Dquarkus.native.container-build=true
+# Then:
+#   docker build -f inventory-server/src/main/docker/Dockerfile.native -t inventory-server:native inventory-server
+FROM registry.access.redhat.com/ubi9/ubi-minimal:9.5
+RUN microdnf install -y fontconfig dejavu-sans-fonts && microdnf clean all \
+    && fc-cache -f
+ENV LANG=C.UTF-8
+WORKDIR /work/
+RUN chown 1001 /work && chmod "g+rwX" /work && chown 1001:root /work
+# quarkus-awt: the native build emits JDK AWT shared libraries (libawt*.so,
+# libfontmanager.so, ...) that the executable dlopens at runtime — ship them
+# beside the binary and point java.library.path at them.
+COPY --chown=1001:root target/*.so /work/
+COPY --chown=1001:root target/*-runner /work/application
+EXPOSE 8080
+USER 1001
+ENTRYPOINT ["./application", "-Dquarkus.http.host=0.0.0.0", "-Djava.library.path=/work"]

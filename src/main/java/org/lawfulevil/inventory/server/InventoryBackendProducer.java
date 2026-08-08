@@ -17,7 +17,6 @@
  */
 package org.lawfulevil.inventory.server;
 
-import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.lawfulevil.inventory.api.AuditReader;
 import org.lawfulevil.inventory.api.AuditSink;
 import org.lawfulevil.inventory.api.InventorySystem;
@@ -55,20 +54,22 @@ import jakarta.inject.Singleton;
 @ApplicationScoped
 public class InventoryBackendProducer {
 
-  @ConfigProperty(name = "inventory.storage", defaultValue = "memory")
-  String storage;
+  // Config is read lazily (never injected into fields): in native images this
+  // bean can be instantiated during static init, and field-injected values
+  // would be frozen at their build-time defaults (e.g. storage=memory even
+  // when the container says pg).
+  private static String config(String name, String defaultValue) {
+    return org.eclipse.microprofile.config.ConfigProvider.getConfig()
+        .getOptionalValue(name, String.class).orElse(defaultValue);
+  }
 
-  @ConfigProperty(name = "inventory.principal", defaultValue = "inventory-server")
-  String principal;
+  private String storage() {
+    return config("inventory.storage", "memory");
+  }
 
-  @ConfigProperty(name = "inventory.api.token")
-  String apiToken;
-
-  @ConfigProperty(name = "inventory.admin.email", defaultValue = "admin@example.com")
-  String adminEmail;
-
-  @ConfigProperty(name = "inventory.admin.password", defaultValue = "change-me")
-  String adminPassword;
+  private String principal() {
+    return config("inventory.principal", "inventory-server");
+  }
 
   @Inject
   Instance<Pool> pools;
@@ -85,16 +86,16 @@ public class InventoryBackendProducer {
   @Produces
   @Singleton
   public InventorySystem inventorySystem() {
-    return switch (this.storage) {
-    case "pg" -> new PgInventorySystem(this.pools.get(), this.principal);
-    default -> new InMemoryInventorySystem(this.memoryAudit, this.principal);
+    return switch (storage()) {
+    case "pg" -> new PgInventorySystem(this.pools.get(), principal());
+    default -> new InMemoryInventorySystem(this.memoryAudit, principal());
     };
   }
 
   @Produces
   @Singleton
   public AuditSink auditSink() {
-    return switch (this.storage) {
+    return switch (storage()) {
     case "pg" -> pgAudit();
     default -> this.memoryAudit;
     };
@@ -103,7 +104,7 @@ public class InventoryBackendProducer {
   @Produces
   @Singleton
   public AuditReader auditReader() {
-    return switch (this.storage) {
+    return switch (storage()) {
     case "pg" -> pgAudit();
     default -> this.memoryAudit;
     };
@@ -112,9 +113,9 @@ public class InventoryBackendProducer {
   @Produces
   @Singleton
   public org.lawfulevil.inventory.api.LocationSystem locationSystem(InventorySystem items) {
-    return switch (this.storage) {
-    case "pg" -> new org.lawfulevil.inventory.impl.PgLocationSystem(this.pools.get(), this.principal);
-    default -> new org.lawfulevil.inventory.impl.InMemoryLocationSystem(items, this.memoryAudit, this.principal);
+    return switch (storage()) {
+    case "pg" -> new org.lawfulevil.inventory.impl.PgLocationSystem(this.pools.get(), principal());
+    default -> new org.lawfulevil.inventory.impl.InMemoryLocationSystem(items, this.memoryAudit, principal());
     };
   }
 
@@ -127,16 +128,16 @@ public class InventoryBackendProducer {
   @Produces
   @Singleton
   public org.lawfulevil.inventory.api.AssetStore assetStore(InventorySystem items) {
-    return switch (this.storage) {
-    case "pg" -> new org.lawfulevil.inventory.impl.PgAssetStore(this.pools.get(), this.principal);
-    default -> new org.lawfulevil.inventory.impl.InMemoryAssetStore(items, this.memoryAudit, this.principal);
+    return switch (storage()) {
+    case "pg" -> new org.lawfulevil.inventory.impl.PgAssetStore(this.pools.get(), principal());
+    default -> new org.lawfulevil.inventory.impl.InMemoryAssetStore(items, this.memoryAudit, principal());
     };
   }
 
   @Produces
   @Singleton
   public UserStore userStore() {
-    return switch (this.storage) {
+    return switch (storage()) {
     case "pg" -> new PgUserStore(this.pools.get());
     default -> new InMemoryUserStore();
     };
@@ -145,16 +146,18 @@ public class InventoryBackendProducer {
   @Produces
   @Singleton
   public TokenService tokenService() {
-    return switch (this.storage) {
+    return switch (storage()) {
     case "pg" -> new PgTokenService(this.pools.get());
     default -> new InMemoryTokenService();
     };
   }
 
   void onStart(@Observes StartupEvent ev, UserStore users, TokenService tokens) {
-    InventoryUser admin = users.ensureUser(this.adminEmail, "Administrator", this.adminPassword, true)
+    InventoryUser admin = users
+        .ensureUser(config("inventory.admin.email", "admin@example.com"), "Administrator",
+            config("inventory.admin.password", "change-me"), true)
         .toCompletableFuture().join();
     if (tokens instanceof InMemoryTokenService memoryTokens)
-      memoryTokens.seed(this.apiToken, admin);
+      memoryTokens.seed(config("inventory.api.token", "dev-token"), admin);
   }
 }
