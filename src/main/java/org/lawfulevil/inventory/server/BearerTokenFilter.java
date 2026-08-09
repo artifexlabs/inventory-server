@@ -17,25 +17,28 @@
  */
 package org.lawfulevil.inventory.server;
 
-import java.io.IOException;
-
+import org.jboss.resteasy.reactive.server.ServerRequestFilter;
 import org.lawfulevil.inventory.api.TokenService;
 
+import io.smallrye.mutiny.Uni;
 import io.vertx.core.json.JsonObject;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.container.ContainerRequestContext;
-import jakarta.ws.rs.container.ContainerRequestFilter;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import jakarta.ws.rs.ext.Provider;
 
 /**
  * Guards every REST resource with a bearer token validated against the
- * {@link TokenService}. The login endpoint is the sole exemption.
+ * {@link TokenService}. The login and exchange endpoints are the sole
+ * exemptions.
+ *
+ * Reactive on purpose: the filter runs on the Vert.x event loop, and in pg
+ * mode {@code authenticate} is a real database round trip whose result is
+ * delivered by an event loop — joining it here deadlocks (found by
+ * PgModeApiTest). Returning a Uni lets the request suspend instead.
  */
-@Provider
-public class BearerTokenFilter implements ContainerRequestFilter {
+public class BearerTokenFilter {
 
   @Inject
   TokenService tokens;
@@ -43,21 +46,25 @@ public class BearerTokenFilter implements ContainerRequestFilter {
   @Inject
   CurrentUser currentUser;
 
-  @Override
-  public void filter(ContainerRequestContext requestContext) throws IOException {
+  @ServerRequestFilter
+  public Uni<Response> filter(ContainerRequestContext requestContext) {
     String path = requestContext.getUriInfo().getPath();
     if (path.endsWith("/auth/login") || path.endsWith("/auth/exchange"))
-      return;
+      return Uni.createFrom().nullItem();
     String header = requestContext.getHeaderString(HttpHeaders.AUTHORIZATION);
     String token = header != null && header.startsWith("Bearer ") ? header.substring(7) : null;
-    // ContainerRequestFilter is synchronous; token lookups are memory- or
-    // single-row-fast, so blocking here is acceptable for now
-    var user = token == null ? java.util.Optional.<org.lawfulevil.inventory.api.InventoryUser>empty()
-        : this.tokens.authenticate(token).toCompletableFuture().join();
-    if (user.isEmpty())
-      requestContext.abortWith(Response.status(Response.Status.UNAUTHORIZED).type(MediaType.APPLICATION_JSON)
-          .entity(new JsonObject().put("error", "missing or invalid bearer token").encode()).build());
-    else
+    if (token == null)
+      return Uni.createFrom().item(unauthorized());
+    return Uni.createFrom().completionStage(() -> this.tokens.authenticate(token)).map(user -> {
+      if (user.isEmpty())
+        return unauthorized();
       this.currentUser.set(user.get());
+      return null;
+    });
+  }
+
+  private static Response unauthorized() {
+    return Response.status(Response.Status.UNAUTHORIZED).type(MediaType.APPLICATION_JSON)
+        .entity(new JsonObject().put("error", "missing or invalid bearer token").encode()).build();
   }
 }
