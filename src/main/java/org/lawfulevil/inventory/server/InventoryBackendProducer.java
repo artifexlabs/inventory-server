@@ -122,7 +122,13 @@ public class InventoryBackendProducer {
   @Produces
   @Singleton
   public org.lawfulevil.inventory.api.LabelPrinter labelPrinter() {
-    return new org.lawfulevil.inventory.impl.LoggingLabelPrinter();
+    return switch (config("inventory.printer", "log")) {
+    case "brother-p750w" -> new org.lawfulevil.inventory.impl.BrotherPTouchPrinter(
+        config("inventory.printer.host", "localhost"),
+        Integer.parseInt(config("inventory.printer.port", "9100")),
+        Integer.parseInt(config("inventory.printer.tape-mm", "24")));
+    default -> new org.lawfulevil.inventory.impl.LoggingLabelPrinter();
+    };
   }
 
   @Produces
