@@ -182,12 +182,15 @@ public class ItemsResource {
   @Path("/{id}/print-label")
   @Consumes(MediaType.WILDCARD)
   public CompletionStage<Response> printLabel(@PathParam("id") String id) {
+    // Capture on the request thread: hardware printers complete their future on a
+    // pool thread, where the request-scoped CurrentUser proxy is unreachable.
+    String principal = this.currentUser.principal();
     return this.inventory.getItem(id).thenCompose(o -> o
         .map(item -> this.labelPrinter.printLabel(item, QrCodes.png(scanUrl(id), 300))
             .thenCompose(ok -> this.auditSink
                 .record(new org.lawfulevil.inventory.api.DefaultAuditEvent(
                     org.lawfulevil.inventory.impl.Ulid.next(), java.time.Instant.now(),
-                    this.currentUser.principal(), "label.print", id,
+                    principal, "label.print", id,
                     new JsonObject().put("printed", ok)))
                 .thenApply(v -> ok ? Response.noContent().build()
                     : Response.status(Response.Status.SERVICE_UNAVAILABLE).build())))
