@@ -56,4 +56,48 @@ public class AssetsResource {
     return this.assets.delete(id).thenApply(ok -> ok ? Response.noContent().build()
         : Response.status(Response.Status.NOT_FOUND).build());
   }
+
+  // --- spatial annotation (Phase 8): boxes drawn on a picture asset --------
+
+  @jakarta.inject.Inject
+  org.lawfulevil.inventory.api.RegionSystem regions;
+
+  @GET
+  @Path("/{id}/regions")
+  @jakarta.ws.rs.Produces(jakarta.ws.rs.core.MediaType.APPLICATION_JSON)
+  public CompletionStage<String> listRegions(@PathParam("id") String id) {
+    return this.regions.listRegions(id).thenApply(list -> new io.vertx.core.json.JsonArray(
+        list.stream().map(r -> r.toJson()).toList()).encode());
+  }
+
+  /** Draw-then-describe step 1: persist a bare box ({x,y,w,h,label?}). */
+  @jakarta.ws.rs.POST
+  @Path("/{id}/regions")
+  @jakarta.ws.rs.Consumes(jakarta.ws.rs.core.MediaType.APPLICATION_JSON)
+  @jakarta.ws.rs.Produces(jakarta.ws.rs.core.MediaType.APPLICATION_JSON)
+  public CompletionStage<Response> createRegion(@PathParam("id") String id, String body) {
+    io.vertx.core.json.JsonObject j = new io.vertx.core.json.JsonObject(body);
+    return this.regions
+        .createRegion(id, j.getDouble("x"), j.getDouble("y"), j.getDouble("w"), j.getDouble("h"),
+            j.getString("label"))
+        .thenApply(o -> o
+            .map(r -> Response.status(Response.Status.CREATED).entity(r.toJson().encode()).build())
+            .orElseGet(() -> Response.status(Response.Status.NOT_FOUND).build()));
+  }
+
+  /** One-shot: box + item + containment in a single transaction. */
+  @jakarta.ws.rs.POST
+  @Path("/{id}/regions/make-item")
+  @jakarta.ws.rs.Consumes(jakarta.ws.rs.core.MediaType.APPLICATION_JSON)
+  @jakarta.ws.rs.Produces(jakarta.ws.rs.core.MediaType.APPLICATION_JSON)
+  public CompletionStage<Response> createItemFromRegion(@PathParam("id") String id, String body) {
+    io.vertx.core.json.JsonObject j = new io.vertx.core.json.JsonObject(body);
+    return this.regions
+        .createItemFromRegion(id, j.getDouble("x"), j.getDouble("y"), j.getDouble("w"), j.getDouble("h"),
+            j.getString("name"), j.getString("type"), j.getString("containerId"))
+        .thenApply(o -> o
+            .map(item -> Response.status(Response.Status.CREATED)
+                .entity(org.lawfulevil.inventory.api.ItemFactory.serialize(item).encode()).build())
+            .orElseGet(() -> Response.status(Response.Status.NOT_FOUND).build()));
+  }
 }

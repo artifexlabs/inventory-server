@@ -142,6 +142,17 @@ public class InventoryBackendProducer {
 
   @Produces
   @Singleton
+  public org.lawfulevil.inventory.api.RegionSystem regionSystem(InventorySystem items,
+      org.lawfulevil.inventory.api.AssetStore assets) {
+    return switch (storage()) {
+    case "pg" -> new org.lawfulevil.inventory.impl.PgRegionSystem(this.pools.get(), principal());
+    default -> new org.lawfulevil.inventory.impl.InMemoryRegionSystem(items, assets, this.memoryAudit,
+        principal());
+    };
+  }
+
+  @Produces
+  @Singleton
   public UserStore userStore() {
     return switch (storage()) {
     case "pg" -> new PgUserStore(this.pools.get());

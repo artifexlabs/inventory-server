@@ -105,6 +105,41 @@ public class PgModeApiTest {
 
   @Test
   @Order(5)
+  public void regionsUseThePgStoreTransactionally() {
+    // upload a photo of the space (the pg-item acts as the space/container)
+    String assetId = given().header("Authorization", "Bearer " + token()).contentType("image/jpeg")
+        .header("X-Filename", "space.jpg").body(new byte[] { (byte) 0xFF, (byte) 0xD8, (byte) 0xFF, (byte) 0xD9 })
+        .post("/api/v1/items/" + itemId + "/assets").then().statusCode(201).extract().path("id");
+    // draw a bare box (draw-then-describe step 1)
+    String boxId = given().header("Authorization", "Bearer " + token()).contentType("application/json")
+        .body(new JsonObject().put("x", 0.25).put("y", 0.25).put("w", 0.5).put("h", 0.5).encode())
+        .post("/api/v1/assets/" + assetId + "/regions").then().statusCode(201).extract().path("id");
+    given().header("Authorization", "Bearer " + token()).get("/api/v1/assets/" + assetId + "/regions").then()
+        .statusCode(200).body("size()", equalTo(1)).body("[0].itemId", org.hamcrest.Matchers.nullValue());
+    // describe it (step 2): item + containment + link, one pg transaction
+    String toolId = given().header("Authorization", "Bearer " + token()).contentType("application/json")
+        .body(new JsonObject().put("name", "pg-region-tool").put("type", "tool").put("containerId", itemId)
+            .encode())
+        .post("/api/v1/regions/" + boxId + "/make-item").then().statusCode(201).extract().path("id");
+    given().header("Authorization", "Bearer " + token()).get("/api/v1/items/" + toolId + "/containers").then()
+        .statusCode(200).body("id", hasItem(itemId));
+    given().header("Authorization", "Bearer " + token()).get("/api/v1/assets/" + assetId + "/regions").then()
+        .statusCode(200).body("[0].itemId", equalTo(toolId));
+    given().header("Authorization", "Bearer " + token()).get("/api/v1/audit/target/" + toolId).then()
+        .statusCode(200).body("action", hasItem("item.create-from-region"))
+        .body("action", hasItem("item.contain"));
+    // linked boxes refuse re-description; deletion still works and audits
+    given().header("Authorization", "Bearer " + token()).contentType("application/json")
+        .body(new JsonObject().put("name", "again").put("type", "t").encode())
+        .post("/api/v1/regions/" + boxId + "/make-item").then().statusCode(404);
+    given().header("Authorization", "Bearer " + token()).delete("/api/v1/regions/" + boxId).then()
+        .statusCode(204);
+    given().header("Authorization", "Bearer " + token()).get("/api/v1/assets/" + assetId + "/regions").then()
+        .statusCode(200).body("size()", equalTo(0));
+  }
+
+  @Test
+  @Order(6)
   public void logoutRevokesThePostgresToken() {
     given().header("Authorization", "Bearer " + token()).contentType("application/json")
         .post("/api/v1/auth/logout").then().statusCode(200).body("revoked", equalTo(true));
@@ -112,7 +147,7 @@ public class PgModeApiTest {
   }
 
   @Test
-  @Order(6)
+  @Order(7)
   public void auditTrailIsReadableByFreshLogin() {
     String fresh = given().contentType("application/json")
         .body(new JsonObject().put("email", "admin@example.com").put("password", "change-me").encode())

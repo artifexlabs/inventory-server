@@ -136,10 +136,15 @@ public class ItemsResource {
   @Consumes(MediaType.WILDCARD)
   public CompletionStage<Response> uploadAsset(@PathParam("itemId") String itemId,
       @jakarta.ws.rs.HeaderParam(AssetsResource.FILENAME_HEADER) String filename,
-      @jakarta.ws.rs.HeaderParam("Content-Type") String contentType, byte[] body) {
+      @jakarta.ws.rs.HeaderParam("Content-Type") String contentType,
+      @jakarta.ws.rs.QueryParam("lat") Double lat, @jakarta.ws.rs.QueryParam("long") Double lng, byte[] body) {
     String name = filename == null || filename.isBlank() ? "unnamed" : filename;
     String type = contentType == null || contentType.isBlank() ? MediaType.APPLICATION_OCTET_STREAM : contentType;
-    return this.assets.store(itemId, name, type, body == null ? new byte[0] : body)
+    // explicit client coordinates (a phone's GPS at capture) beat EXIF
+    org.lawfulevil.inventory.api.LatLong explicit = lat != null && lng != null
+        ? new org.lawfulevil.inventory.api.LatLong(lat, lng)
+        : null;
+    return this.assets.store(itemId, name, type, body == null ? new byte[0] : body, explicit)
         .thenApply(o -> o
             .map(info -> Response.status(Response.Status.CREATED).entity(info.toJson().encode()).build())
             .orElseGet(() -> Response.status(Response.Status.NOT_FOUND).build()));
