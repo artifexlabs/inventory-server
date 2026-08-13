@@ -44,8 +44,14 @@ import jakarta.ws.rs.core.Response;
 
 /**
  * Trusted webapp-to-server identity exchange for OIDC logins: the webapp has
- * already verified the user's identity with Google, and presents the shared
- * secret plus the verified email to obtain an API token.
+ * already verified the user's identity with the provider, and presents the
+ * shared secret plus the verified claims to obtain an API token.
+ *
+ * When the body carries {@code provider} + {@code subject}, identity wins over
+ * email: the federated identity is looked up first, then a matching email
+ * links the identity to that user (providers like Apple hand out relay
+ * addresses, so email is profile data, not the key). Legacy
+ * {@code {email, displayName}} bodies keep the email-keyed behavior.
  *
  * Disabled entirely (404) until {@code inventory.oidc.exchange-secret} is
  * configured. Provisioning policy {@code inventory.oidc.provision}:
@@ -84,24 +90,39 @@ public class OidcExchangeResource {
     String email = j.getString("email");
     if (email == null || email.isBlank())
       return CompletableFuture.completedStage(error(Response.Status.BAD_REQUEST, "email is required"));
-    return findByEmail(email).thenCompose(existing -> {
+    String provider = j.getString("provider");
+    String subject = j.getString("subject");
+    if (provider == null || provider.isBlank() || subject == null || subject.isBlank())
+      return byEmail(email, j, null, null);
+    return this.users.findByIdentity(provider, subject)
+        .thenCompose(known -> known.isPresent() ? issue(known.get()) : byEmail(email, j, provider, subject));
+  }
+
+  private CompletionStage<Response> byEmail(String email, JsonObject j, String provider, String subject) {
+    return this.users.findByEmail(email).thenCompose(existing -> {
       if (existing.isPresent())
-        return issue(existing.get());
+        return link(existing.get(), provider, subject).thenCompose(v -> issue(existing.get()));
       if (!"auto".equals(this.provision))
         return CompletableFuture
             .completedStage(error(Response.Status.FORBIDDEN, "not invited: " + email));
       // auto-provision with an unguessable password: the account is OIDC-only in practice
       return this.users.ensureUser(email, j.getString("displayName"), UUID.randomUUID().toString(), false)
-          .thenCompose(u -> this.audit
-              .record(new DefaultAuditEvent(Ulid.next(), Instant.now(), email, "user.create", u.getId(),
-                  new JsonObject().put("email", email).put("via", "oidc-auto-provision")))
-              .thenCompose(v -> issue(u)));
+          .thenCompose(u -> link(u, provider, subject)
+              .thenCompose(x -> this.audit
+                  .record(new DefaultAuditEvent(Ulid.next(), Instant.now(), email, "user.create", u.getId(),
+                      new JsonObject().put("email", email).put("via", "oidc-auto-provision")
+                          .put("provider", provider == null ? "unknown" : provider)))
+                  .thenCompose(v -> issue(u))));
     });
   }
 
-  private CompletionStage<Optional<InventoryUser>> findByEmail(String email) {
-    return this.users.list()
-        .thenApply(all -> all.stream().filter(u -> u.getEmail().equalsIgnoreCase(email)).findFirst());
+  private CompletionStage<Void> link(InventoryUser user, String provider, String subject) {
+    if (provider == null || subject == null)
+      return CompletableFuture.completedStage(null);
+    return this.users.linkIdentity(user.getId(), provider, subject)
+        .thenCompose(v -> this.audit.record(new DefaultAuditEvent(Ulid.next(), Instant.now(), user.getEmail(),
+            "user.identity-link", user.getId(), new JsonObject().put("provider", provider))))
+        .thenApply(v -> null);
   }
 
   private CompletionStage<Response> issue(InventoryUser user) {
