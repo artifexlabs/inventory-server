@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Clustered event-bus fabric (VERTICLES.md stage 6): vertx-infinispan's
+     default-infinispan.xml with the jgroups stack swapped for our TCPPING
+     stack (static discovery; multicast is dead on container networks).
+     Inert unless quarkus.vertx.cluster.clustered=true. -->
+<infinispan xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+            xsi:schemaLocation="urn:infinispan:config:14.0 http://www.infinispan.org/schemas/infinispan-config-14.0.xsd"
+            xmlns="urn:infinispan:config:14.0">
+
+  <jgroups>
+    <stack-file name="inventory-tcp" path="jgroups-inventory-tcp.xml"/>
+  </jgroups>
+
+  <cache-container default-cache="distributed-cache">
+    <transport stack="inventory-tcp"/>
+    <distributed-cache name="distributed-cache"/>
+    <replicated-cache name="__vertx.subs"/>
+    <replicated-cache name="__vertx.haInfo"/>
+    <replicated-cache name="__vertx.nodeInfo"/>
+    <distributed-cache-configuration name="__vertx.distributed.cache.configuration"/>
+  </cache-container>
+
+</infinispan>

@@ -1,6 +1,8 @@
-# Native image for inventory-server. Fonts + fontconfig are REQUIRED: label
-# composition renders text via AWT/Java2D (quarkus-awt), which needs a real
-# fontconfig setup and at least one font family in the image.
+# Native image for inventory-server — the worker host owns label composition,
+# so fonts + fontconfig are REQUIRED: text renders via AWT/Java2D
+# (quarkus-awt), which needs a real fontconfig setup and at least one font
+# family in the image. NOTE: a clustered bus member should use Dockerfile.jvm
+# instead until vertx-infinispan is proven under native.
 #
 # Build the runner first (from the workspace root, macOS included):
 #   mvn -pl inventory-server -am package -DskipTests -Dnative -Dquarkus.native.container-build=true
@@ -17,6 +19,6 @@ RUN chown 1001 /work && chmod "g+rwX" /work && chown 1001:root /work
 # beside the binary and point java.library.path at them.
 COPY --chown=1001:root target/*.so /work/
 COPY --chown=1001:root target/*-runner /work/application
-EXPOSE 8080
+EXPOSE 8082
 USER 1001
 ENTRYPOINT ["./application", "-Dquarkus.http.host=0.0.0.0", "-Djava.library.path=/work"]
