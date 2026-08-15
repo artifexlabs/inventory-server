@@ -158,6 +158,10 @@ public class InventoryBackendProducer {
         config("inventory.printer.host", "localhost"),
         Integer.parseInt(config("inventory.printer.port", "9100")),
         Integer.parseInt(config("inventory.printer.tape-mm", "24")));
+    case "zebra-gk420t" -> new org.lawfulevil.inventory.impl.ZebraPrinter(
+        config("inventory.printer.host", "localhost"),
+        Integer.parseInt(config("inventory.printer.port", "9100")),
+        config("inventory.printer.format", "standard"));
     default -> new org.lawfulevil.inventory.impl.LoggingLabelPrinter();
     };
   }
