@@ -25,7 +25,6 @@ import org.lawfulevil.inventory.api.AuditReader;
 import org.lawfulevil.inventory.api.AuditSink;
 import org.lawfulevil.inventory.api.InventorySystem;
 import org.lawfulevil.inventory.api.LabelPrinter;
-import org.lawfulevil.inventory.api.LocationSystem;
 import org.lawfulevil.inventory.api.RegionSystem;
 import org.lawfulevil.inventory.api.TokenService;
 import org.lawfulevil.inventory.impl.UserStore;
@@ -58,10 +57,10 @@ public class BusHost {
   @Inject
   Vertx vertx;
 
-  void onStart(@Observes StartupEvent ev, InventorySystem inventory, LocationSystem locations, AssetStore assets,
+  void onStart(@Observes StartupEvent ev, InventorySystem inventory, AssetStore assets,
       RegionSystem regions, AuditReader auditReader, AuditSink auditSink, LabelPrinter printer, UserStore users,
       TokenService tokens) {
-    var services = new BusWorkers.BackendServices(inventory, locations, assets, regions, auditReader, auditSink,
+    var services = new BusWorkers.BackendServices(inventory, assets, regions, auditReader, auditSink,
         printer, users, tokens);
     try {
       BusWorkers.deploy(this.vertx, services, new BusGuard(this.fabricToken), this.provision).toCompletableFuture()

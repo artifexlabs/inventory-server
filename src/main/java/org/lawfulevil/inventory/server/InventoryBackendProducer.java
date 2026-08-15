@@ -141,19 +141,7 @@ public class InventoryBackendProducer {
 
   @Produces
   @Singleton
-  public org.lawfulevil.inventory.api.LocationSystem locationSystem(InventorySystem items,
-      org.lawfulevil.inventory.api.events.EventPublisher events, AuditSink sink) {
-    return switch (storage()) {
-    case "pg" -> new org.lawfulevil.inventory.impl.PgLocationSystem(this.pools.get(), principal())
-        .withEventPublisher(events);
-    default -> new org.lawfulevil.inventory.impl.InMemoryLocationSystem(items, sink, principal());
-    };
-  }
-
-  @Produces
-  @Singleton
-  public org.lawfulevil.inventory.api.LabelPrinter labelPrinter(
-      org.lawfulevil.inventory.api.LocationSystem locations) {
+  public org.lawfulevil.inventory.api.LabelPrinter labelPrinter(InventorySystem items) {
     return switch (config("inventory.printer", "log")) {
     case "brother-p750w" -> new org.lawfulevil.inventory.impl.BrotherPTouchPrinter(
         config("inventory.printer.host", "localhost"),
@@ -163,8 +151,8 @@ public class InventoryBackendProducer {
         config("inventory.printer.host", "localhost"),
         Integer.parseInt(config("inventory.printer.port", "9100")),
         config("inventory.printer.format", "standard"))
-        // the large layout prints the location name when the item has one
-        .withLocationLookup(locations::getLocation);
+        // labels print the container's name — "where is it" IS the container
+        .withContainerLookup(items::getItem);
     default -> new org.lawfulevil.inventory.impl.LoggingLabelPrinter();
     };
   }
