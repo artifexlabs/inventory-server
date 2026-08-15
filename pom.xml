@@ -23,11 +23,10 @@
   <parent>
     <groupId>org.lawfulevil.inventory</groupId>
     <artifactId>inventory-parent</artifactId>
-    <version>1-SNAPSHOT</version>
+    <version>${revision}</version>
     <relativePath>../inventory-parent/pom.xml</relativePath>
   </parent>
   <artifactId>inventory-server</artifactId>
-  <version>0.0.1-SNAPSHOT</version>
   <name>${project.artifactId}</name>
   <description>Quarkus worker host: the inventory domain services behind the Vert.x event-bus fabric (no HTTP surface beyond health)</description>
   <url>${github.url.base}/${project.artifactId}</url>

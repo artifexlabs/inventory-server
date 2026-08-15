@@ -5,3 +5,4 @@ pom.xml.*
 release.properties
 *.log
 *.iml
+.flattened-pom.xml
