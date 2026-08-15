@@ -152,7 +152,8 @@ public class InventoryBackendProducer {
 
   @Produces
   @Singleton
-  public org.lawfulevil.inventory.api.LabelPrinter labelPrinter() {
+  public org.lawfulevil.inventory.api.LabelPrinter labelPrinter(
+      org.lawfulevil.inventory.api.LocationSystem locations) {
     return switch (config("inventory.printer", "log")) {
     case "brother-p750w" -> new org.lawfulevil.inventory.impl.BrotherPTouchPrinter(
         config("inventory.printer.host", "localhost"),
@@ -161,7 +162,9 @@ public class InventoryBackendProducer {
     case "zebra-gk420t" -> new org.lawfulevil.inventory.impl.ZebraPrinter(
         config("inventory.printer.host", "localhost"),
         Integer.parseInt(config("inventory.printer.port", "9100")),
-        config("inventory.printer.format", "standard"));
+        config("inventory.printer.format", "standard"))
+        // the large layout prints the location name when the item has one
+        .withLocationLookup(locations::getLocation);
     default -> new org.lawfulevil.inventory.impl.LoggingLabelPrinter();
     };
   }
