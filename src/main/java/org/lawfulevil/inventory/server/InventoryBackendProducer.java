@@ -158,6 +158,36 @@ public class InventoryBackendProducer {
     };
   }
 
+  /**
+   * External UPC catalog sources, ordered (first hit wins): open data before
+   * the rate-limited commercial trial. {@code off} disables lookups entirely;
+   * base-URL overrides point tests at local stub fixtures.
+   */
+  @Produces
+  @Singleton
+  public org.lawfulevil.inventory.api.UpcCatalog upcCatalog() {
+    String configured = config("inventory.catalog", "open-facts,upcitemdb");
+    if (configured.isBlank() || "off".equals(configured.trim()))
+      return org.lawfulevil.inventory.api.UpcCatalog.OFF;
+    java.util.List<org.lawfulevil.inventory.api.UpcCatalog> sources = new java.util.ArrayList<>();
+    for (String token : configured.split(",")) {
+      switch (token.trim()) {
+      case "open-facts" -> {
+        String override = config("inventory.catalog.open-facts.url", "");
+        sources.add(new org.lawfulevil.inventory.impl.catalog.OpenFactsCatalog(override.isBlank()
+            ? org.lawfulevil.inventory.impl.catalog.OpenFactsCatalog.DEFAULT_BASES
+            : java.util.List.of(override)));
+      }
+      case "upcitemdb" -> sources.add(new org.lawfulevil.inventory.impl.catalog.UpcItemDbCatalog(
+          config("inventory.catalog.upcitemdb.url",
+              org.lawfulevil.inventory.impl.catalog.UpcItemDbCatalog.DEFAULT_BASE)));
+      default -> throw new IllegalArgumentException("unknown catalog source: " + token);
+      }
+    }
+    return sources.size() == 1 ? sources.get(0)
+        : new org.lawfulevil.inventory.impl.catalog.CompositeCatalog(sources);
+  }
+
   @Produces
   @Singleton
   public org.lawfulevil.inventory.api.AssetStore assetStore(InventorySystem items,

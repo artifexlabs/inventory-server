@@ -59,9 +59,9 @@ public class BusHost {
 
   void onStart(@Observes StartupEvent ev, InventorySystem inventory, AssetStore assets,
       RegionSystem regions, AuditReader auditReader, AuditSink auditSink, LabelPrinter printer, UserStore users,
-      TokenService tokens) {
+      TokenService tokens, org.lawfulevil.inventory.api.UpcCatalog catalog) {
     var services = new BusWorkers.BackendServices(inventory, assets, regions, auditReader, auditSink,
-        printer, users, tokens);
+        printer, users, tokens, catalog);
     try {
       BusWorkers.deploy(this.vertx, services, new BusGuard(this.fabricToken), this.provision).toCompletableFuture()
           .get(30, TimeUnit.SECONDS);
