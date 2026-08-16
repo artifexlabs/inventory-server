@@ -146,7 +146,8 @@ public class InventoryBackendProducer {
     case "brother-p750w" -> new org.lawfulevil.inventory.impl.BrotherPTouchPrinter(
         config("inventory.printer.host", "localhost"),
         Integer.parseInt(config("inventory.printer.port", "9100")),
-        Integer.parseInt(config("inventory.printer.tape-mm", "24")));
+        Integer.parseInt(config("inventory.printer.tape-mm", "24")),
+        Boolean.parseBoolean(config("inventory.printer.chain", "false")));
     case "zebra-gk420t" -> new org.lawfulevil.inventory.impl.ZebraPrinter(
         config("inventory.printer.host", "localhost"),
         Integer.parseInt(config("inventory.printer.port", "9100")),
