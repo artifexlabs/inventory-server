@@ -146,8 +146,7 @@ public class InventoryBackendProducer {
     case "brother-p750w" -> new io.artifexlabs.inventory.impl.BrotherPTouchPrinter(
         config("inventory.printer.host", "localhost"),
         Integer.parseInt(config("inventory.printer.port", "9100")),
-        Integer.parseInt(config("inventory.printer.tape-mm", "24")),
-        Boolean.parseBoolean(config("inventory.printer.chain", "false")));
+        Integer.parseInt(config("inventory.printer.tape-mm", "24")));
     case "zebra-gk420t" -> new io.artifexlabs.inventory.impl.ZebraPrinter(
         config("inventory.printer.host", "localhost"),
         Integer.parseInt(config("inventory.printer.port", "9100")),
