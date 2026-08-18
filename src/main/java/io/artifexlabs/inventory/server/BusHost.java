@@ -15,21 +15,21 @@
  * limitations under the License.
  * @formatter:on
  */
-package org.lawfulevil.inventory.server;
+package io.artifexlabs.inventory.server;
 
 import java.util.concurrent.TimeUnit;
 
 import org.eclipse.microprofile.config.inject.ConfigProperty;
-import org.lawfulevil.inventory.api.AssetStore;
-import org.lawfulevil.inventory.api.AuditReader;
-import org.lawfulevil.inventory.api.AuditSink;
-import org.lawfulevil.inventory.api.InventorySystem;
-import org.lawfulevil.inventory.api.LabelPrinter;
-import org.lawfulevil.inventory.api.RegionSystem;
-import org.lawfulevil.inventory.api.TokenService;
-import org.lawfulevil.inventory.impl.UserStore;
-import org.lawfulevil.inventory.impl.bus.BusGuard;
-import org.lawfulevil.inventory.impl.bus.BusWorkers;
+import io.artifexlabs.inventory.api.AssetStore;
+import io.artifexlabs.inventory.api.AuditReader;
+import io.artifexlabs.inventory.api.AuditSink;
+import io.artifexlabs.inventory.api.InventorySystem;
+import io.artifexlabs.inventory.api.LabelPrinter;
+import io.artifexlabs.inventory.api.RegionSystem;
+import io.artifexlabs.inventory.api.TokenService;
+import io.artifexlabs.inventory.impl.UserStore;
+import io.artifexlabs.inventory.impl.bus.BusGuard;
+import io.artifexlabs.inventory.impl.bus.BusWorkers;
 
 import io.quarkus.runtime.StartupEvent;
 import io.vertx.core.Vertx;
@@ -59,7 +59,7 @@ public class BusHost {
 
   void onStart(@Observes StartupEvent ev, InventorySystem inventory, AssetStore assets,
       RegionSystem regions, AuditReader auditReader, AuditSink auditSink, LabelPrinter printer, UserStore users,
-      TokenService tokens, org.lawfulevil.inventory.api.UpcCatalog catalog) {
+      TokenService tokens, io.artifexlabs.inventory.api.UpcCatalog catalog) {
     var services = new BusWorkers.BackendServices(inventory, assets, regions, auditReader, auditSink,
         printer, users, tokens, catalog);
     try {

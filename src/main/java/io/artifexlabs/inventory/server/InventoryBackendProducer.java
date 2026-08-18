@@ -15,22 +15,22 @@
  * limitations under the License.
  * @formatter:on
  */
-package org.lawfulevil.inventory.server;
+package io.artifexlabs.inventory.server;
 
-import org.lawfulevil.inventory.api.AuditReader;
-import org.lawfulevil.inventory.api.AuditSink;
-import org.lawfulevil.inventory.api.InventorySystem;
-import org.lawfulevil.inventory.api.InventoryUser;
-import org.lawfulevil.inventory.api.TokenService;
-import org.lawfulevil.inventory.impl.InMemoryAuditSink;
-import org.lawfulevil.inventory.impl.InMemoryInventorySystem;
-import org.lawfulevil.inventory.impl.InMemoryTokenService;
-import org.lawfulevil.inventory.impl.InMemoryUserStore;
-import org.lawfulevil.inventory.impl.PgAudit;
-import org.lawfulevil.inventory.impl.PgInventorySystem;
-import org.lawfulevil.inventory.impl.PgTokenService;
-import org.lawfulevil.inventory.impl.PgUserStore;
-import org.lawfulevil.inventory.impl.UserStore;
+import io.artifexlabs.inventory.api.AuditReader;
+import io.artifexlabs.inventory.api.AuditSink;
+import io.artifexlabs.inventory.api.InventorySystem;
+import io.artifexlabs.inventory.api.InventoryUser;
+import io.artifexlabs.inventory.api.TokenService;
+import io.artifexlabs.inventory.impl.InMemoryAuditSink;
+import io.artifexlabs.inventory.impl.InMemoryInventorySystem;
+import io.artifexlabs.inventory.impl.InMemoryTokenService;
+import io.artifexlabs.inventory.impl.InMemoryUserStore;
+import io.artifexlabs.inventory.impl.PgAudit;
+import io.artifexlabs.inventory.impl.PgInventorySystem;
+import io.artifexlabs.inventory.impl.PgTokenService;
+import io.artifexlabs.inventory.impl.PgUserStore;
+import io.artifexlabs.inventory.impl.UserStore;
 
 import io.quarkus.runtime.StartupEvent;
 import io.vertx.mutiny.sqlclient.Pool;
@@ -97,17 +97,17 @@ public class InventoryBackendProducer {
    */
   @Produces
   @Singleton
-  public org.lawfulevil.inventory.api.events.EventPublisher eventPublisher(
+  public io.artifexlabs.inventory.api.events.EventPublisher eventPublisher(
       Instance<io.vertx.core.Vertx> vertx) {
     return switch (config("inventory.events.bus", "none")) {
-    case "local", "clustered" -> new org.lawfulevil.inventory.impl.bus.VertxEventPublisher(vertx.get());
-    default -> org.lawfulevil.inventory.api.events.EventPublisher.NOOP;
+    case "local", "clustered" -> new io.artifexlabs.inventory.impl.bus.VertxEventPublisher(vertx.get());
+    default -> io.artifexlabs.inventory.api.events.EventPublisher.NOOP;
     };
   }
 
   @Produces
   @Singleton
-  public InventorySystem inventorySystem(org.lawfulevil.inventory.api.events.EventPublisher events,
+  public InventorySystem inventorySystem(io.artifexlabs.inventory.api.events.EventPublisher events,
       AuditSink sink) {
     return switch (storage()) {
     case "pg" -> new PgInventorySystem(this.pools.get(), principal()).withEventPublisher(events);
@@ -122,12 +122,12 @@ public class InventoryBackendProducer {
    */
   @Produces
   @Singleton
-  public AuditSink auditSink(org.lawfulevil.inventory.api.events.EventPublisher events) {
+  public AuditSink auditSink(io.artifexlabs.inventory.api.events.EventPublisher events) {
     AuditSink raw = switch (storage()) {
     case "pg" -> pgAudit();
     default -> this.memoryAudit;
     };
-    return new org.lawfulevil.inventory.impl.PublishingAuditSink(raw, events);
+    return new io.artifexlabs.inventory.impl.PublishingAuditSink(raw, events);
   }
 
   @Produces
@@ -141,20 +141,20 @@ public class InventoryBackendProducer {
 
   @Produces
   @Singleton
-  public org.lawfulevil.inventory.api.LabelPrinter labelPrinter(InventorySystem items) {
+  public io.artifexlabs.inventory.api.LabelPrinter labelPrinter(InventorySystem items) {
     return switch (config("inventory.printer", "log")) {
-    case "brother-p750w" -> new org.lawfulevil.inventory.impl.BrotherPTouchPrinter(
+    case "brother-p750w" -> new io.artifexlabs.inventory.impl.BrotherPTouchPrinter(
         config("inventory.printer.host", "localhost"),
         Integer.parseInt(config("inventory.printer.port", "9100")),
         Integer.parseInt(config("inventory.printer.tape-mm", "24")),
         Boolean.parseBoolean(config("inventory.printer.chain", "false")));
-    case "zebra-gk420t" -> new org.lawfulevil.inventory.impl.ZebraPrinter(
+    case "zebra-gk420t" -> new io.artifexlabs.inventory.impl.ZebraPrinter(
         config("inventory.printer.host", "localhost"),
         Integer.parseInt(config("inventory.printer.port", "9100")),
         config("inventory.printer.format", "standard"))
         // labels print the container's name — "where is it" IS the container
         .withContainerLookup(items::getItem);
-    default -> new org.lawfulevil.inventory.impl.LoggingLabelPrinter();
+    default -> new io.artifexlabs.inventory.impl.LoggingLabelPrinter();
     };
   }
 
@@ -165,49 +165,49 @@ public class InventoryBackendProducer {
    */
   @Produces
   @Singleton
-  public org.lawfulevil.inventory.api.UpcCatalog upcCatalog() {
+  public io.artifexlabs.inventory.api.UpcCatalog upcCatalog() {
     String configured = config("inventory.catalog", "open-facts,upcitemdb");
     if (configured.isBlank() || "off".equals(configured.trim()))
-      return org.lawfulevil.inventory.api.UpcCatalog.OFF;
-    java.util.List<org.lawfulevil.inventory.api.UpcCatalog> sources = new java.util.ArrayList<>();
+      return io.artifexlabs.inventory.api.UpcCatalog.OFF;
+    java.util.List<io.artifexlabs.inventory.api.UpcCatalog> sources = new java.util.ArrayList<>();
     for (String token : configured.split(",")) {
       switch (token.trim()) {
       case "open-facts" -> {
         String override = config("inventory.catalog.open-facts.url", "");
-        sources.add(new org.lawfulevil.inventory.impl.catalog.OpenFactsCatalog(override.isBlank()
-            ? org.lawfulevil.inventory.impl.catalog.OpenFactsCatalog.DEFAULT_BASES
+        sources.add(new io.artifexlabs.inventory.impl.catalog.OpenFactsCatalog(override.isBlank()
+            ? io.artifexlabs.inventory.impl.catalog.OpenFactsCatalog.DEFAULT_BASES
             : java.util.List.of(override)));
       }
-      case "upcitemdb" -> sources.add(new org.lawfulevil.inventory.impl.catalog.UpcItemDbCatalog(
+      case "upcitemdb" -> sources.add(new io.artifexlabs.inventory.impl.catalog.UpcItemDbCatalog(
           config("inventory.catalog.upcitemdb.url",
-              org.lawfulevil.inventory.impl.catalog.UpcItemDbCatalog.DEFAULT_BASE)));
+              io.artifexlabs.inventory.impl.catalog.UpcItemDbCatalog.DEFAULT_BASE)));
       default -> throw new IllegalArgumentException("unknown catalog source: " + token);
       }
     }
     return sources.size() == 1 ? sources.get(0)
-        : new org.lawfulevil.inventory.impl.catalog.CompositeCatalog(sources);
+        : new io.artifexlabs.inventory.impl.catalog.CompositeCatalog(sources);
   }
 
   @Produces
   @Singleton
-  public org.lawfulevil.inventory.api.AssetStore assetStore(InventorySystem items,
-      org.lawfulevil.inventory.api.events.EventPublisher events, AuditSink sink) {
+  public io.artifexlabs.inventory.api.AssetStore assetStore(InventorySystem items,
+      io.artifexlabs.inventory.api.events.EventPublisher events, AuditSink sink) {
     return switch (storage()) {
-    case "pg" -> new org.lawfulevil.inventory.impl.PgAssetStore(this.pools.get(), principal())
+    case "pg" -> new io.artifexlabs.inventory.impl.PgAssetStore(this.pools.get(), principal())
         .withEventPublisher(events);
-    default -> new org.lawfulevil.inventory.impl.InMemoryAssetStore(items, sink, principal());
+    default -> new io.artifexlabs.inventory.impl.InMemoryAssetStore(items, sink, principal());
     };
   }
 
   @Produces
   @Singleton
-  public org.lawfulevil.inventory.api.RegionSystem regionSystem(InventorySystem items,
-      org.lawfulevil.inventory.api.AssetStore assets,
-      org.lawfulevil.inventory.api.events.EventPublisher events, AuditSink sink) {
+  public io.artifexlabs.inventory.api.RegionSystem regionSystem(InventorySystem items,
+      io.artifexlabs.inventory.api.AssetStore assets,
+      io.artifexlabs.inventory.api.events.EventPublisher events, AuditSink sink) {
     return switch (storage()) {
-    case "pg" -> new org.lawfulevil.inventory.impl.PgRegionSystem(this.pools.get(), principal())
+    case "pg" -> new io.artifexlabs.inventory.impl.PgRegionSystem(this.pools.get(), principal())
         .withEventPublisher(events);
-    default -> new org.lawfulevil.inventory.impl.InMemoryRegionSystem(items, assets, sink, principal());
+    default -> new io.artifexlabs.inventory.impl.InMemoryRegionSystem(items, assets, sink, principal());
     };
   }
 

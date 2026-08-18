@@ -15,7 +15,7 @@
  * limitations under the License.
  * @formatter:on
  */
-package org.lawfulevil.inventory.server;
+package io.artifexlabs.inventory.server;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -28,9 +28,9 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 import org.junit.jupiter.api.Test;
-import org.lawfulevil.inventory.api.bus.BusActions;
-import org.lawfulevil.inventory.api.bus.Roles;
-import org.lawfulevil.inventory.impl.bus.DefaultBusEnvelope;
+import io.artifexlabs.inventory.api.bus.BusActions;
+import io.artifexlabs.inventory.api.bus.Roles;
+import io.artifexlabs.inventory.impl.bus.DefaultBusEnvelope;
 
 import io.quarkus.test.junit.QuarkusTest;
 import io.vertx.core.Vertx;
