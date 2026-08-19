@@ -50,54 +50,6 @@
       <url>${site.target.url}/</url>
     </site>
   </distributionManagement>
-  <dependencyManagement>
-    <dependencies>
-      <!-- vertx-infinispan's jakarta line targets Infinispan 14 (15 hides
-           DefaultCacheManager.getTransport(), 13 is the javax line, and the
-           quarkus-bom's commons/protostream overrides must not leak in) —
-           pin the whole embedded set coherently. -->
-      <dependency>
-        <groupId>org.infinispan</groupId>
-        <artifactId>infinispan-core</artifactId>
-        <version>14.0.20.Final</version>
-      </dependency>
-      <dependency>
-        <groupId>org.infinispan</groupId>
-        <artifactId>infinispan-multimap</artifactId>
-        <version>14.0.20.Final</version>
-      </dependency>
-      <dependency>
-        <groupId>org.infinispan</groupId>
-        <artifactId>infinispan-clustered-lock</artifactId>
-        <version>14.0.20.Final</version>
-      </dependency>
-      <dependency>
-        <groupId>org.infinispan</groupId>
-        <artifactId>infinispan-clustered-counter</artifactId>
-        <version>14.0.20.Final</version>
-      </dependency>
-      <dependency>
-        <groupId>org.infinispan</groupId>
-        <artifactId>infinispan-commons</artifactId>
-        <version>14.0.20.Final</version>
-      </dependency>
-      <dependency>
-        <groupId>org.infinispan</groupId>
-        <artifactId>infinispan-component-annotations</artifactId>
-        <version>14.0.20.Final</version>
-      </dependency>
-      <dependency>
-        <groupId>org.infinispan.protostream</groupId>
-        <artifactId>protostream</artifactId>
-        <version>4.6.5.Final</version>
-      </dependency>
-      <dependency>
-        <groupId>org.infinispan.protostream</groupId>
-        <artifactId>protostream-types</artifactId>
-        <version>4.6.5.Final</version>
-      </dependency>
-    </dependencies>
-  </dependencyManagement>
   <dependencies>
     <dependency>
       <groupId>io.artifexlabs.inventory</groupId>
@@ -132,12 +84,10 @@
     <dependency>
       <groupId>org.infinispan</groupId>
       <artifactId>infinispan-core-jakarta</artifactId>
-      <version>14.0.20.Final</version>
     </dependency>
     <dependency>
       <groupId>org.infinispan</groupId>
       <artifactId>infinispan-multimap-jakarta</artifactId>
-      <version>14.0.20.Final</version>
       <exclusions>
         <exclusion>
           <groupId>org.infinispan</groupId>
