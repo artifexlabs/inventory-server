@@ -74,6 +74,11 @@
       <artifactId>inventory-impl-pg</artifactId>
     </dependency>
     <dependency>
+      <!-- the worker verticles this app hosts/deploys -->
+      <groupId>io.artifexlabs.inventory</groupId>
+      <artifactId>inventory-impl-bus</artifactId>
+    </dependency>
+    <dependency>
       <!-- this app CONSTRUCTS the hardware printers (InventoryBackendProducer) -->
       <groupId>io.artifexlabs.inventory</groupId>
       <artifactId>inventory-impl-brother</artifactId>

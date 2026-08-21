@@ -30,7 +30,7 @@ import io.artifexlabs.inventory.impl.PgAudit;
 import io.artifexlabs.inventory.impl.PgInventorySystem;
 import io.artifexlabs.inventory.impl.PgTokenService;
 import io.artifexlabs.inventory.impl.PgUserStore;
-import io.artifexlabs.inventory.impl.UserStore;
+import io.artifexlabs.inventory.api.UserStore;
 
 import io.quarkus.runtime.StartupEvent;
 import io.vertx.mutiny.sqlclient.Pool;
