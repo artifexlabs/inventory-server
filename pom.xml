@@ -74,6 +74,15 @@
       <artifactId>inventory-impl-pg</artifactId>
     </dependency>
     <dependency>
+      <!-- this app CONSTRUCTS the hardware printers (InventoryBackendProducer) -->
+      <groupId>io.artifexlabs.inventory</groupId>
+      <artifactId>inventory-impl-brother</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>io.artifexlabs.inventory</groupId>
+      <artifactId>inventory-impl-zebra</artifactId>
+    </dependency>
+    <dependency>
       <groupId>io.quarkus</groupId>
       <artifactId>quarkus-vertx</artifactId>
     </dependency>
