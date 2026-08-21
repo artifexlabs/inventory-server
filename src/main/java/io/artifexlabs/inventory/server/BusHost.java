@@ -63,7 +63,8 @@ public class BusHost {
     var services = new BusWorkers.BackendServices(inventory, assets, regions, auditReader, auditSink,
         printer, users, tokens, catalog);
     try {
-      BusWorkers.deploy(this.vertx, services, new BusGuard(this.fabricToken), this.provision).toCompletableFuture()
+      BusWorkers.deploy(this.vertx, services, new BusGuard(this.fabricToken,
+          new io.artifexlabs.inventory.impl.bus.VertxStatusPublisher(this.vertx)), this.provision).toCompletableFuture()
           .get(30, TimeUnit.SECONDS);
     } catch (Exception e) {
       throw new IllegalStateException("bus workers failed to deploy", e);

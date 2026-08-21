@@ -141,16 +141,21 @@ public class InventoryBackendProducer {
 
   @Produces
   @Singleton
-  public io.artifexlabs.inventory.api.LabelPrinter labelPrinter(InventorySystem items) {
+  public io.artifexlabs.inventory.api.LabelPrinter labelPrinter(InventorySystem items,
+      Instance<io.vertx.core.Vertx> vertx) {
+    // printer refusals reach a human through the status topic (MORE_VERTX)
+    io.artifexlabs.inventory.api.events.StatusPublisher status =
+        new io.artifexlabs.inventory.impl.bus.VertxStatusPublisher(vertx.get());
     return switch (config("inventory.printer", "log")) {
     case "brother-p750w" -> new io.artifexlabs.inventory.impl.BrotherPTouchPrinter(
         config("inventory.printer.host", "localhost"),
         Integer.parseInt(config("inventory.printer.port", "9100")),
-        Integer.parseInt(config("inventory.printer.tape-mm", "24")));
+        Integer.parseInt(config("inventory.printer.tape-mm", "24")), status);
     case "zebra-gk420t" -> new io.artifexlabs.inventory.impl.ZebraPrinter(
         config("inventory.printer.host", "localhost"),
         Integer.parseInt(config("inventory.printer.port", "9100")),
         config("inventory.printer.format", "standard"))
+        .withStatusPublisher(status)
         // labels print the container's name — "where is it" IS the container
         .withContainerLookup(items::getItem);
     default -> new io.artifexlabs.inventory.impl.LoggingLabelPrinter();
