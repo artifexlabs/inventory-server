@@ -143,7 +143,7 @@ public class InventoryBackendProducer {
   @Singleton
   public io.artifexlabs.inventory.api.LabelPrinter labelPrinter(InventorySystem items,
       Instance<io.vertx.core.Vertx> vertx) {
-    // printer refusals reach a human through the status topic (MORE_VERTX)
+    // printer refusals reach a human through the status topic (PLAN.md Phase 21)
     io.artifexlabs.inventory.api.events.StatusPublisher status =
         new io.artifexlabs.inventory.impl.bus.VertxStatusPublisher(vertx.get());
     return switch (config("inventory.printer", "log")) {
