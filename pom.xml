@@ -50,6 +50,20 @@
       <url>${site.target.url}/</url>
     </site>
   </distributionManagement>
+  <dependencyManagement>
+    <dependencies>
+      <!-- The inventory-family version authority (Phase 19): ONE coherent,
+           CI-verified set from the BOM. inventory-parent manages third-party
+           versions only — Central rejects SNAPSHOT dM in released poms. -->
+      <dependency>
+        <groupId>io.artifexlabs.inventory</groupId>
+        <artifactId>inventory-bom</artifactId>
+        <version>0.1.0-SNAPSHOT</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
   <dependencies>
     <dependency>
       <groupId>io.artifexlabs.inventory</groupId>
