@@ -2,7 +2,7 @@
      Infinispan 15's default-jgroups-tcp.xml with ONE change: MPING (multicast
      discovery, dead on container bridge networks) is replaced by TCPPING
      with static initial hosts. Override per deployment:
-       -Djgroups.tcpping.initial_hosts=inventory-web-api[7800],inventory-exporter[7800]
+       -Djgroups.tcpping.initial_hosts=inventory-web-api[7800],inventory-projector[7800]
        -Djgroups.bind.address=match-interface:eth0 -->
 <config xmlns="urn:org:jgroups"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
