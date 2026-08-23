@@ -49,7 +49,7 @@
   </distributionManagement>
 
   <properties>
-    <inventory.bom.version>0.2.0-SNAPSHOT</inventory.bom.version>
+    <inventory.bom.version>0.2.0</inventory.bom.version>
     <!-- inventory-parent (which defines this) now lives OUTSIDE the
          workspace, and Quarkus's bootstrap resolves workspace module
          versions from raw poms — so ${revision} must be resolvable here.
