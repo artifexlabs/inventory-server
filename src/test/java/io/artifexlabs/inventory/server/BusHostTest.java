@@ -39,8 +39,8 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
 /**
- * The worker fabric, exercised over the real event bus: guard refusals
- * (fabric token, roles) and representative worker paths, memory backend.
+ * The worker fabric, exercised over the real event bus: guard refusals (fabric token, roles) and representative worker
+ * paths, memory backend.
  */
 @QuarkusTest
 public class BusHostTest {
@@ -52,8 +52,9 @@ public class BusHostTest {
 
   private Object request(String action, Optional<String> target, JsonObject data, String token, Set<String> roles)
       throws Exception {
-    JsonObject envelope = new DefaultBusEnvelope(DefaultBusEnvelope.VERSION, token, "test-user",
-        "tester@example.com", roles, action, target, data).toJson();
+    JsonObject envelope = new DefaultBusEnvelope(DefaultBusEnvelope.VERSION, token,
+        io.artifexlabs.inventory.api.Ulid.next(), "test-user", "tester@example.com", roles, action, target, data)
+        .toJson();
     CompletableFuture<Object> reply = new CompletableFuture<>();
     this.vertx.eventBus().request(BusActions.addressOf(action), envelope, r -> {
       if (r.succeeded())
@@ -93,8 +94,8 @@ public class BusHostTest {
   @Test
   public void crudRoundTripOverTheBus() throws Exception {
     JsonObject created = (JsonObject) request(BusActions.ITEMS_CREATE, Optional.empty(),
-        new JsonObject().put("name", "bus-crate").put("displayName", "Bus Crate").put("type", "container"),
-        FABRIC, Set.of(Roles.READ, Roles.WRITE));
+        new JsonObject().put("name", "bus-crate").put("displayName", "Bus Crate").put("type", "container"), FABRIC,
+        Set.of(Roles.READ, Roles.WRITE));
     String id = created.getString("id");
     assertNotNull(id);
 
@@ -109,9 +110,9 @@ public class BusHostTest {
     // every action is attributed to the envelope's authenticated user
     JsonArray history = (JsonArray) request(BusActions.AUDIT_BY_TARGET, Optional.of(id), new JsonObject(), FABRIC,
         Set.of(Roles.READ));
-    assertTrue(history.stream().map(JsonObject.class::cast)
-        .anyMatch(e -> "item.create".equals(e.getString("action"))
-            && "tester@example.com".equals(e.getString("principal"))),
+    assertTrue(
+        history.stream().map(JsonObject.class::cast).anyMatch(
+            e -> "item.create".equals(e.getString("action")) && "tester@example.com".equals(e.getString("principal"))),
         "item.create should carry the acting principal, got: " + history);
 
     try {

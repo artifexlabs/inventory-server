@@ -18,26 +18,23 @@
     @formatter:on
 
 -->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
+
   <parent>
     <groupId>io.artifexlabs.inventory</groupId>
     <artifactId>inventory-parent</artifactId>
     <version>1</version>
     <relativePath/>
   </parent>
+
   <artifactId>inventory-server</artifactId>
   <version>${revision}</version>
-  <properties>
-    <!-- inventory-parent (which defines this) now lives OUTSIDE the
-         workspace, and Quarkus's bootstrap resolves workspace module
-         versions from raw poms — so ${revision} must be resolvable here.
-         -Drevision=X.Y.Z on the command line still overrides it. -->
-    <revision>0.0.1-SNAPSHOT</revision>
-  </properties>
+
   <name>${project.artifactId}</name>
   <description>Quarkus worker host: the inventory domain services behind the Vert.x event-bus fabric (no HTTP surface beyond health)</description>
   <url>${github.url.base}/${project.artifactId}</url>
+
   <scm>
     <connection>scm:git:${git.url}</connection>
     <url>scm:git:${git.url}</url>
@@ -50,6 +47,16 @@
       <url>${site.target.url}/</url>
     </site>
   </distributionManagement>
+
+  <properties>
+    <inventory.bom.version>0.2.0-SNAPSHOT</inventory.bom.version>
+    <!-- inventory-parent (which defines this) now lives OUTSIDE the
+         workspace, and Quarkus's bootstrap resolves workspace module
+         versions from raw poms — so ${revision} must be resolvable here.
+         -Drevision=X.Y.Z on the command line still overrides it. -->
+    <revision>0.0.1-SNAPSHOT</revision>
+  </properties>
+
   <dependencyManagement>
     <dependencies>
       <!-- The inventory-family version authority (Phase 19): ONE coherent,
@@ -58,7 +65,7 @@
       <dependency>
         <groupId>io.artifexlabs.inventory</groupId>
         <artifactId>inventory-bom</artifactId>
-        <version>0.1.0</version>
+        <version>${inventory.bom.version}</version>
         <type>pom</type>
         <scope>import</scope>
       </dependency>
@@ -73,13 +80,11 @@
       <groupId>io.artifexlabs.inventory</groupId>
       <artifactId>inventory-impl-pg</artifactId>
     </dependency>
-    <dependency>
-      <!-- the worker verticles this app hosts/deploys -->
+    <dependency><!-- the worker verticles this app hosts/deploys -->
       <groupId>io.artifexlabs.inventory</groupId>
       <artifactId>inventory-impl-bus</artifactId>
     </dependency>
-    <dependency>
-      <!-- this app CONSTRUCTS the hardware printers (InventoryBackendProducer) -->
+    <dependency><!-- this app CONSTRUCTS the hardware printers (InventoryBackendProducer) -->
       <groupId>io.artifexlabs.inventory</groupId>
       <artifactId>inventory-impl-brother</artifactId>
     </dependency>
@@ -91,8 +96,7 @@
       <groupId>io.quarkus</groupId>
       <artifactId>quarkus-vertx</artifactId>
     </dependency>
-    <dependency>
-      <!-- Cluster manager for the clustered event bus. Inert unless
+    <dependency><!-- Cluster manager for the clustered event bus. Inert unless
            quarkus.vertx.cluster.clustered=true. Infinispan 14 ships jakarta
            variants as -jakarta artifacts; the plain ones are javax and must
            not reach the classpath. -->
@@ -123,8 +127,7 @@
         </exclusion>
       </exclusions>
     </dependency>
-    <dependency>
-      <!-- label composition renders text via AWT/Java2D in the labels worker -->
+    <dependency><!-- label composition renders text via AWT/Java2D in the labels worker -->
       <groupId>io.quarkus</groupId>
       <artifactId>quarkus-awt</artifactId>
     </dependency>
@@ -157,6 +160,7 @@
       <scope>test</scope>
     </dependency>
   </dependencies>
+
   <build>
     <plugins>
       <plugin>

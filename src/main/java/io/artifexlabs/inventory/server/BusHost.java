@@ -38,11 +38,9 @@ import jakarta.enterprise.event.Observes;
 import jakarta.inject.Inject;
 
 /**
- * This IS inventory-server now: no HTTP surface beyond health, just the bus
- * workers deployed on the (usually clustered) Vert.x instance — CRUD, audit,
- * QR/label, users, tokens, and authentication, every one behind the
- * {@link BusGuard}'s fabric-token and role checks. Whether the bus is
- * process-local or clustered is Vert.x configuration, not code.
+ * This IS inventory-server now: no HTTP surface beyond health, just the bus workers deployed on the (usually clustered)
+ * Vert.x instance — CRUD, audit, QR/label, users, tokens, and authentication, every one behind the {@link BusGuard}'s
+ * fabric-token and role checks. Whether the bus is process-local or clustered is Vert.x configuration, not code.
  */
 @ApplicationScoped
 public class BusHost {
@@ -57,15 +55,15 @@ public class BusHost {
   @Inject
   Vertx vertx;
 
-  void onStart(@Observes StartupEvent ev, InventorySystem inventory, AssetStore assets,
-      RegionSystem regions, AuditReader auditReader, AuditSink auditSink, LabelPrinter printer, UserStore users,
-      TokenService tokens, io.artifexlabs.inventory.api.UpcCatalog catalog) {
-    var services = new BusWorkers.BackendServices(inventory, assets, regions, auditReader, auditSink,
-        printer, users, tokens, catalog);
+  void onStart(@Observes StartupEvent ev, InventorySystem inventory, AssetStore assets, RegionSystem regions,
+      AuditReader auditReader, AuditSink auditSink, LabelPrinter printer, UserStore users, TokenService tokens,
+      io.artifexlabs.inventory.api.UpcCatalog catalog, io.artifexlabs.inventory.api.DataSystem data) {
+    var services = new BusWorkers.BackendServices(inventory, assets, regions, auditReader, auditSink, printer, users,
+        tokens, catalog, data);
     try {
-      BusWorkers.deploy(this.vertx, services, new BusGuard(this.fabricToken,
-          new io.artifexlabs.inventory.impl.bus.VertxStatusPublisher(this.vertx)), this.provision).toCompletableFuture()
-          .get(30, TimeUnit.SECONDS);
+      BusWorkers.deploy(this.vertx, services,
+          new BusGuard(this.fabricToken, new io.artifexlabs.inventory.impl.bus.VertxStatusPublisher(this.vertx)),
+          this.provision).toCompletableFuture().get(30, TimeUnit.SECONDS);
     } catch (Exception e) {
       throw new IllegalStateException("bus workers failed to deploy", e);
     }
