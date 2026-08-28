@@ -57,9 +57,10 @@ public class BusHost {
 
   void onStart(@Observes StartupEvent ev, InventorySystem inventory, AssetStore assets, RegionSystem regions,
       AuditReader auditReader, AuditSink auditSink, LabelPrinter printer, UserStore users, TokenService tokens,
-      io.artifexlabs.inventory.api.UpcCatalog catalog, io.artifexlabs.inventory.api.DataSystem data) {
+      io.artifexlabs.inventory.api.UpcCatalog catalog, io.artifexlabs.inventory.api.DataSystem data,
+      io.artifexlabs.inventory.api.DataHashing hashing) {
     var services = new BusWorkers.BackendServices(inventory, assets, regions, auditReader, auditSink, printer, users,
-        tokens, catalog, data);
+        tokens, catalog, data, hashing);
     try {
       BusWorkers.deploy(this.vertx, services,
           new BusGuard(this.fabricToken, new io.artifexlabs.inventory.impl.bus.VertxStatusPublisher(this.vertx)),

@@ -212,6 +212,21 @@ public class InventoryBackendProducer {
     };
   }
 
+  /**
+   * The hashing queue's twin of {@link #dataSystem}, and it must be built from the SAME store — the in-memory pair
+   * share one manifest, so handing the hasher a second {@code InMemoryDataSystem} would give it a manifest nothing else
+   * writes to and every claim would come back empty.
+   */
+  @Produces
+  @Singleton
+  public io.artifexlabs.inventory.api.DataHashing dataHashing(io.artifexlabs.inventory.api.DataSystem data) {
+    return switch (storage()) {
+    case "pg" -> new io.artifexlabs.inventory.impl.PgDataHashing(this.pools.get(), principal());
+    default -> new io.artifexlabs.inventory.impl.InMemoryDataHashing(
+        (io.artifexlabs.inventory.impl.InMemoryDataSystem) data, principal());
+    };
+  }
+
   @Produces
   @Singleton
   public UserStore userStore() {
