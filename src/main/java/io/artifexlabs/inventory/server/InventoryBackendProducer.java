@@ -204,10 +204,13 @@ public class InventoryBackendProducer {
 
   @Produces
   @Singleton
-  public io.artifexlabs.inventory.api.DataSystem dataSystem(InventorySystem items, AuditSink sink) {
+  public io.artifexlabs.inventory.api.DataSystem dataSystem(InventorySystem items, AuditSink sink,
+      io.artifexlabs.inventory.api.events.EventPublisher events) {
     return switch (storage()) {
+    // withEventPublisher: the memory twin publishes through the decorated sink
+    // for free; Pg writes its audit row in-transaction and must announce after
     case "pg" -> new io.artifexlabs.inventory.impl.PgDataSystem(this.pools.get(),
-        (io.artifexlabs.inventory.impl.PgInventorySystem) items, principal());
+        (io.artifexlabs.inventory.impl.PgInventorySystem) items, principal()).withEventPublisher(events);
     default -> new io.artifexlabs.inventory.impl.InMemoryDataSystem(items, sink, principal());
     };
   }
