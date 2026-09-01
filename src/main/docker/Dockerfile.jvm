@@ -4,6 +4,13 @@
 # Build the fast-jar first:  mvn -pl inventory-server -am package -DskipTests
 FROM registry.access.redhat.com/ubi9/openjdk-21-runtime:1.21
 ENV LANGUAGE='en_US:en'
+# The label composer renders text through AWT, which needs fontconfig and at
+# least one real font on the box — the bare runtime image has neither, and
+# without them every hardware print dies with "Fontconfig head is null"
+# (found 2026-09-01, first containerized print against the Brother).
+USER root
+RUN microdnf install -y fontconfig dejavu-sans-fonts && microdnf clean all
+USER 185
 COPY --chown=185 target/quarkus-app/lib/ /deployments/lib/
 COPY --chown=185 target/quarkus-app/*.jar /deployments/
 COPY --chown=185 target/quarkus-app/app/ /deployments/app/
